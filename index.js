@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import pkg from "pg";
-
 const { Pool } = pkg;
 
 const PORT = process.env.PORT || 3000;
@@ -13,10 +12,10 @@ const pool = new Pool(
         ssl: { rejectUnauthorized: false },
       }
     : {
-        host: "TU HOST MASTER",
-        database: "EL NOMBRE",
-        user: "bEL USUARO",
-        password: "CRENDENCIALES",
+        host: "TU_HOST_MASTER",
+        database: "TU_BASE",
+        user: "TU_USUARIO",
+        password: "TU_PASSWORD",
         port: 5432,
         ssl: { rejectUnauthorized: false },
       }
@@ -26,16 +25,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// helper de DB
 async function db(queryText, params = []) {
   const client = await pool.connect();
   try {
-    const result = await client.query(queryText, params);
-    return result;
+    return await client.query(queryText, params);
   } finally {
     client.release();
   }
 }
 
+// rutas
 app.get("/api/saludo", (_req, res) => {
   res.json({
     ok: true,
@@ -61,6 +61,9 @@ app.get("/api/usuarios", async (_req, res, next) => {
 app.post("/api/usuarios", async (req, res, next) => {
   try {
     const { nombre, correo, password } = req.body;
+    if (!nombre || !correo || !password) {
+      return next({ status: 400, payload: { ok: false, error: "datos_incompletos" } });
+    }
     const { rows } = await db(
       `INSERT INTO usuarios (nombre, correo, password)
        VALUES ($1, $2, $3)
@@ -77,22 +80,26 @@ app.post("/api/usuarios", async (req, res, next) => {
   }
 });
 
+// 404
 app.use((_req, res) => {
   res.status(404).json({ ok: false, error: "not_found" });
 });
 
+// manejador de errores
 app.use((err, _req, res, _next) => {
   const status = err?.status || 500;
   const payload = err?.payload || { ok: false, error: "internal_error" };
   res.status(status).json(payload);
 });
 
-const server = app.listen(PORT, () => {
-  console.log(Servidor corriendo en http://localhost:${PORT});
+// ---- ARRANQUE ----
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 
+// ---- SHUTDOWN GRACIOSO ----
 function shutdown(signal) {
-  console.log(\nRecibido ${signal}. Cerrando servidor...);
+  console.log(`\nRecibido ${signal}. Cerrando servidor...`);
   server.close(async () => {
     try {
       await pool.end();
@@ -104,3 +111,6 @@ function shutdown(signal) {
     }
   });
 }
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
