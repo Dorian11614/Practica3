@@ -13,10 +13,10 @@ const pool = new Pool(
         ssl: { rejectUnauthorized: false },
       }
     : {
-        host: "TU HOST MASTER",
-        database: "EL NOMBRE",
-        user: "bEL USUARO",
-        password: "CRENDENCIALES",
+        host: "dpg-d2qbab2dbo4c73bv670g-a.oregon-postgres.render.com",
+        database: "basededatos_9ymq",
+        user: "basededatos_9ymq_user",
+        password: "JSYNNiI228jUn7467aDGAsshguudnEiu",
         port: 5432,
         ssl: { rejectUnauthorized: false },
       }
